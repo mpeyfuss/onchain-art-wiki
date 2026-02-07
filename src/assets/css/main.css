@@ -52,15 +52,15 @@
   }
 
   h3 {
-    @apply mb-2 mt-6 text-3xl;
+    @apply mb-2 mt-6 text-2xl;
   }
 
   h4 {
-    @apply mb-2 mt-5 text-2xl;
+    @apply mb-2 mt-5 text-xl;
   }
 
   h5 {
-    @apply mb-2 mt-4 text-xl;
+    @apply mb-2 mt-4 text-lg;
   }
 
   p {
@@ -90,6 +90,33 @@
 
   li + li {
     @apply mt-2;
+  }
+
+  table {
+    @apply mt-6 w-full border-collapse text-left text-sm;
+  }
+
+  th,
+  td {
+    @apply border border-zinc-300 px-3 py-2 align-top;
+  }
+
+  th {
+    @apply bg-zinc-100 font-semibold text-zinc-900 whitespace-nowrap;
+  }
+
+  td {
+    @apply text-zinc-700;
+    min-width: 11rem;
+  }
+
+  @media (max-width: 900px) {
+    table {
+      display: block;
+      overflow-x: auto;
+      white-space: nowrap;
+      -webkit-overflow-scrolling: touch;
+    }
   }
 
   pre {

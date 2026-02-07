@@ -1,6 +1,6 @@
 ---
 layout: layouts/article.njk
-title: "Accepted Metadata Storage Practices"
+title: "Accepted Metadata Storage Practices on Ethereum"
 tags: ["ethereum", "metadata", "storage"]
 summary: "A practical guide to generally accepted NFT metadata storage approaches for digital art on Ethereum."
 authors: ["mpeyfuss"]
@@ -16,53 +16,64 @@ opinions:
     author: "mpeyfuss"
     date: 2024-07-30
     note: "Choosing a storage method for NFTs is full of compromises and there is no clear winner."
+  - title: "Who Is Responsible for NFT Data?"
+    url: "https://medium.com/pinata/who-is-responsible-for-nft-data-99fb4e8147e4"
+    author: "kyletut"
+    date: 2020-04-06
+    note: "Who is responsible for maintaining NFT data not stored on a blockchain?"
 ---
-This page focuses on *NFT metadata*: the JSON (and referenced media) that wallets and marketplaces fetch to display an NFT. The goal here is not to declare a single “best” solution, but to document the options that are broadly considered acceptable by the onchain art community, and the tradeoffs you should understand.
+This page focuses on NFT metadata: the JSON (and referenced media) that wallets and marketplaces fetch to display an NFT. The goal is not to declare a single “best” solution, but to document the options that are broadly considered acceptable by the onchain art community and the tradeoffs you should understand. This is meant to be a living document that is updated over time.
 
-## 1. Background
+## TL;DR
 
-### 1a. What ERC-721 and ERC-1155 specify (and what they do not)
+- IPFS, Arweave, and onchain storage can all be “good” solutions. The difference is tradeoffs and operational discipline.
+- Prefer canonical, decentralized URIs (`ipfs://`, `ar://`) over centralized `https://` links whenever possible.
+- If you use IPFS or Arweave, keep backups and manifests (pin/replicate where relevant) so you can recover from tool/provider/gateway failures.
+- Have a “what if” plan (domain loss, gateway outage, pinning provider shutdown, marketplace caching quirks) before you mint.
 
-The two dominant token standards on Ethereum, ERC-721 and ERC-1155, define how NFTs are owned and transferred. They also define *how a client can discover a metadata URI*.
+## Background
 
-- **ERC-721**: the optional metadata extension adds `name()`, `symbol()`, and `tokenURI(tokenId)`. The standard describes an “ERC721 Metadata JSON Schema” with core fields like `name`, `description`, and `image`.  
-  Standard: [EIP-721](https://eips.ethereum.org/EIPS/eip-721)
-- **ERC-1155**: the optional metadata URI extension adds `uri(id)` and standardizes **`{id}` substitution** (lowercase, 64-hex, zero-padded). It also includes a JSON schema that is loosely based on the ERC-721 metadata schema.  
-  Standard: [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155)
+### Key terms
 
-What these ERCs **do not** guarantee:
+- **Metadata JSON:** a JSON document describing the token (name, description, media pointers, traits).
+- **Media:** the image/video/audio/HTML/etc. referenced by the metadata (often `image` or `animation_url`).
+- **URI:** a string clients resolve to find metadata (can be `https://`, `ipfs://`, `ar://`, or `data:`).
+- **Content-addressed (IPFS):** the identifier is derived from the content (change bytes, change ID). This is why IPFS CIDs are strong integrity anchors.
+- **Transaction ID (Arweave):** an immutable identifier for a specific upload transaction. Re-uploading the same bytes produces a different txid, so preserving txids/manifests matters.
+- **Gateway:** an HTTP service that fetches content from a network like IPFS or Arweave and serves it over `https://`.
+- **Pinning (IPFS):** ensuring at least one node you control (or pay) keeps serving the content over time.
+- **Onchain:** data stored directly in Ethereum state (high durability, but constrained by cost and client support).
+
+### What ERC-721 and ERC-1155 specify
+
+The two dominant token standards on Ethereum, ERC-721 and ERC-1155, define how NFTs are owned and transferred. They also define how clients discover metadata URIs and what shape that metadata is expected to take.
+
+Importantly, these standards are intentionally open-ended about *what the token represents* and *how metadata is stored*. That flexibility is a feature: the “asset” a token points to could be fully onchain, offchain digital media, or even something physical. In practice, they only suggest a broadly-adopted JSON format that clients can interpret.
+
+Primary references (source of truth):
+
+- ERC-721: [EIP-721](https://eips.ethereum.org/EIPS/eip-721)
+- ERC-1155: [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155)
+
+Secondary overviews (useful for less technical readers):
+
+- ERC-721 overview: [ethereum.org ERC-721](https://ethereum.org/developers/docs/standards/tokens/erc-721)
+- ERC-1155 overview: [ethereum.org ERC-1155](https://ethereum.org/developers/docs/standards/tokens/erc-1155)
+
+### What these ERCs do not guarantee
 
 - That a given URI will stay online forever.
 - That a marketplace will fetch it the way you expect (or at all).
-- That the metadata *won’t* change (unless you build immutability guarantees into your design).
-- That any particular *transport* (`https://`, `ipfs://`, `ar://`, `data:`) will be supported everywhere.
+- That the metadata *won’t* change (unless you build immutability guarantees into your contracts).
+- That any particular transport (`https://`, `ipfs://`, `ar://`, `data:`) will be supported everywhere.
 
-Helpful references:
-- OpenSea “Metadata Standards” (practical, widely referenced): [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
-- OpenZeppelin overview of `tokenURI` usage: [OpenZeppelin ERC-721](https://docs.openzeppelin.com/contracts/4.x/erc721)
+### Metadata mutability and signaling
 
-### 1b. How NFT metadata is specified by the ERCs
+Marketplaces and wallets routinely cache metadata. Even if you update a URI or its content, many clients will not pick up changes quickly (or at all) unless they have an explicit refresh path.
 
-High level:
+If your project intends metadata to be mutable, document the policy clearly and consider implementing a standard signaling mechanism for updates (for example: [EIP-4906](https://eips.ethereum.org/EIPS/eip-4906)). If your project intends metadata to be immutable, design for that (for example: IPFS CIDs or Arweave txids and a clear “frozen” promise).
 
-- **Your contract returns a URI string** via `tokenURI` (ERC-721) or `uri` (ERC-1155).
-- **A client fetches or decodes metadata** from that URI.
-- The metadata (usually JSON) includes an `image` field (and optionally `animation_url`, `attributes`, etc.) that points to media.
-
-Common URI patterns:
-
-- `https://example.com/metadata/123.json`
-- `ipfs://bafy.../123.json`
-- `ar://<txid>`
-- `data:application/json;base64,<...>`
-
-For ERC-1155, remember that `uri(id)` often returns something like:
-
-- `ipfs://bafy.../{id}.json`
-
-and clients replace `{id}` with the lowercase, 64-character hex form of the token id (no `0x` prefix).
-
-### 1c. A reminder about guarantees
+### A reminder about guarantees
 
 Nothing in life is guaranteed, and that’s especially true for anything that depends on infrastructure outside of Ethereum consensus.
 
@@ -72,75 +83,104 @@ Even “decentralized” networks have:
 - software assumptions (will clients keep supporting a URI scheme?),
 - operational assumptions (did you pin it, pay for it, or replicate it?).
 
-So, when you evaluate a storage approach, think in terms of *failure modes* and *how you’d recover*.
+So, when evaluating a storage approach, it's best to think in terms of *failure modes* and *how you’d recover*.
 
-## 2. Acceptable Solutions
-
-### 2a. Scope and intent
+## Acceptable Solutions
 
 This section is not trying to crown a winner. It documents three approaches that are generally accepted as “good enough to be taken seriously” in the onchain art ecosystem:
 
-1. IPFS
-2. Arweave
-3. Onchain data storage
+- IPFS
+- Arweave
+- Onchain data storage
 
-Each can be done well or poorly. The difference is usually operational discipline and how thoughtfully you design for long-term access.
+Each can be done well or poorly. The difference is usually operational discipline and how thoughtfully the system was designed for long-term access. Many projects also use plain HTTPS as a compatibility layer, but HTTPS alone is rarely treated as a durable long-term plan.
 
-### 2b. IPFS
+### Quick comparison
 
-#### How it works (high level)
+This comparison highlights tradeoffs and ownership of failure modes, not a winner.
+
+| Approach | Integrity | Availability responsibility | Client compatibility | Typical failure mode |
+|---|---|---|---|---|
+| IPFS | Strong (CID) | You (pin/replicate) | Great | "It was on IPFS" but nobody pins it |
+| Arweave | Strong (immutable txid) | Mostly network, plus you keep manifests | Good via gateway | Lost manifests / tooling assumptions |
+| Onchain | Strong (Ethereum state) | Ethereum | Varies by payload size/type | Client limits, gas/cost constraints |
+
+Note on identifiers:
+
+- With IPFS, re-adding the exact same bytes results in the same CID, which makes recovery and re-pinning straightforward.
+- With Arweave, re-uploading the same bytes results in a different txid, so durability depends on preserving the original txids and manifests.
+
+### IPFS
+![IPFS](/assets/articles/images/ipfs.png)
+
+#### How it works
 
 IPFS is content-addressed storage. You add files to the network and get a CID (content identifier). If you change the content, you get a different CID.
 
 In practice, projects usually store:
 
-- metadata JSON on IPFS,
-- media files on IPFS,
-- and have `tokenURI` point at an `ipfs://...` URL.
+- metadata JSON on IPFS
+- media files on IPFS
+- and have `tokenURI` point at an `ipfs://...` URL
 
 #### Why it’s acceptable
 
 When used well, IPFS gives you:
 
-- strong integrity guarantees (CIDs),
-- an easy way to replicate/pin content across multiple operators,
-- flexibility to mirror content via many gateways.
+- strong integrity guarantees (CIDs)
+- an easy way to replicate/pin content across multiple operators (decentralized storage)
+- flexibility to mirror content via many gateways
+- the ability to restore availability by re-pinning the same bytes under the same CID (you can't change the content without changing the CID)
 
 #### Marketplace integration and caveats
 
-- Some platforms understand `ipfs://` directly; others rely on an HTTP gateway (`https://.../ipfs/<cid>`).
+- Many platforms understand `ipfs://` directly, but real-world behavior varies (some clients still rely on HTTP gateways and/or aggressive caching).
 - Even when `ipfs://` is supported, marketplaces often fetch through their own gateway or caching layer.
 - Metadata can be cached; updates may not show immediately unless the platform refreshes.
 
 OpenSea’s docs explicitly mention `ipfs://<hash>` for metadata URIs: [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
 
+More IPFS background:
+
+- Content addressing (why CIDs change when content changes): [IPFS Concepts: Content addressing](https://docs.ipfs.tech/concepts/content-addressing/)
+- Gateways (how `ipfs://` often becomes `https://.../ipfs/<cid>` in practice): [IPFS Concepts: Gateways](https://docs.ipfs.tech/concepts/ipfs-gateway/)
+
+#### A developer’s checklist
+
+- Prefer `ipfs://` as the **canonical** URI, and treat gateway URLs as mirrors for compatibility.
+- Keep a deterministic build output (a reproducible folder structure) so you can re-pin and re-serve the exact same bytes later.
+- Test your CIDs through at least two independent gateways and one local node (to catch DNS, redirect, and header quirks).
+- Decide whether your metadata is immutable or mutable and who has control of updating that.
+
 #### How to back it up
 
-IPFS “being on IPFS” is not the same thing as *durability*. Backups should include:
+Metadata “being on IPFS” is not the same thing as *durability*. Backups should include:
 
 - Pin on multiple independent pinning providers.
 - Run your own IPFS node and pin it yourself (even if you also use a service).
 - Export and archive your data (e.g., keep the original build artifacts, CIDs, and a local copy in cold storage).
+- **Marketplaces, artists, and collectors should all consider backing up their content on IPFS.**
 
-IPFS docs on pinning: [IPFS Pinning Quickstart](https://docs.ipfs.tech/quickstart/pin/)
+How to pin: [IPFS Pinning Quickstart](https://docs.ipfs.tech/quickstart/pin/)
 
-### 2c. Arweave
+### Arweave
+![Arweave](/assets/articles/images/arweave.jpeg)
 
-#### How it works (high level)
+#### How it works
 
 Arweave is designed for long-term (“permanent”) data storage with an upfront payment model. You upload data and receive a transaction ID; the content is then retrievable via gateways (commonly `https://arweave.net/<txid>`).
 
+Unlike IPFS, re-uploading the same bytes does not give you the same identifier: you should treat the original txid as the durable reference and preserve it carefully (manifests, backups, and exports).
+
 You’ll often see:
 
-- metadata JSON stored on Arweave,
-- media stored on Arweave,
-- and token URIs pointing to Arweave content.
-
-Some ecosystems also use the `ar://` scheme as a more decentralized way to reference Arweave content.
+- metadata JSON stored on Arweave
+- media stored on Arweave
+- and token URIs pointing to Arweave content
 
 #### Why it’s acceptable
 
-Arweave is widely used for NFT metadata and media because it’s designed around long-lived retrieval and replication, and it has strong cultural adoption in crypto-native art communities.
+Arweave is widely used for NFT metadata and media because it’s designed around long-lived retrieval and replication, and it has strong cultural adoption in crypto-native art communities. The pay-once-store-for-a-long-time narrative is one that many people in the space value.
 
 #### Marketplace integration and caveats
 
@@ -151,23 +191,34 @@ OpenSea references `ar://<hash>` as the Arweave equivalent of `ipfs://`: [OpenSe
 
 AR.IO Wayfinder (background on `ar://` resolution): [Arweave Wayfinder](https://docs.arweave.net/learn/wayfinder)
 
+More Arweave background:
+
+- Arweave docs: [Arweave Docs](https://docs.arweave.org/)
+
+#### A developer’s checklist
+
+- Store and version a **manifest** of token ids -> txids/URIs in a durable place (git, multiple backups). Treat it as critical infrastructure.
+- Prefer a canonical reference form (`ar://`), then test how your target clients resolve it.
+- Verify you can retrieve the content from more than one gateway over time (don’t assume a single gateway is forever).
+
 #### How to back it up
 
 Arweave’s goal is to be the backup, but you should still keep:
 
-- the original files you uploaded (source-of-truth),
-- a map of token ids to txids/URLs,
-- and redundant exports of that mapping (e.g., repo + cold storage).
+- the original files you uploaded (source-of-truth)
+- a map of token ids to txids/URLs
+- and redundant exports of that mapping (e.g., repo + cold storage)
 
 If your process uses a third-party uploader, also save the exact manifest it produced (token id -> URI), so you can reconstitute listings even if tooling disappears.
 
-### 2d. Onchain data storage
+### Onchain data storage
+![Onchain Art](/assets/articles/images/ethereum.webp)
 
-#### How it works (high level)
+#### How it works
 
-“Onchain metadata” typically means your contract returns a `data:` URI for the JSON, often Base64-encoded:
+There are many ways to put metadata onchain. Some generative art systems store everything needed to recreate the work onchain, but still rely on offchain clients for rendering and presentation. This document won't get into all the different ways to store digital art onchain. Instead, we'll focus on a general strategy which uses data URIs.
 
-- `data:application/json;base64,<...>`
+“Onchain metadata” typically means your contract returns a `data:` URI for the JSON, often Base64-encoded: `data:application/json;base64,<...>`.
 
 The JSON can then reference media either:
 
@@ -175,6 +226,13 @@ The JSON can then reference media either:
 - or via IPFS/Arweave/HTTPS (hybrid approaches).
 
 OpenSea documents this pattern explicitly: [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
+The `data:` URL scheme is defined here: [RFC 2397](https://www.rfc-editor.org/rfc/rfc2397)
+
+#### A developer’s checklist
+
+- Validate the largest `tokenURI` payloads you expect against the clients you care about (some have size limits, timeouts, or strict parsers).
+- If you use Base64 `data:` URIs, ensure the JSON decodes cleanly and uses predictable UTF-8 (avoid exotic encodings).
+- If you are “onchain generative”, document what’s onchain versus what’s assumed offchain (renderers, scripts, fonts, libraries).
 
 #### Why it’s acceptable
 
@@ -182,26 +240,41 @@ Onchain metadata is acceptable because it minimizes external dependencies: if Et
 
 #### Marketplace integration and caveats
 
-- Not all marketplaces handle every kind of `data:` payload equally (size limits, media types, and rendering differences exist).
-- Gas constraints and storage costs are real, and can push projects into hybrid designs.
+- Not all marketplaces handle every kind of `data:` payload equally. Size limits, media types, and rendering differences exist and are important considerations made by marketplaces.
+- Gas constraints and storage costs are real, and can push projects into hybrid designs. Most content cannot be stored on Ethereum without incurring extreme costs.
 - If you rely on external rendering (e.g., offchain JS/HTML), you reintroduce offchain dependencies even if the JSON is onchain.
 
 #### How to back it up
 
 Ethereum already replicates contract state, but “backup” here means:
 
-- keep verified source code and build artifacts so future readers can interpret the onchain bytes,
-- keep rendering instructions (especially for generative work),
-- and consider mirroring the decoded metadata/media on IPFS/Arweave for convenience and redundancy (without treating the mirror as the canonical source).
+- keep verified source code and build artifacts so future readers can interpret the onchain bytes
+- keep rendering instructions (especially for generative work)
+- and consider mirroring the decoded metadata/media on IPFS/Arweave for convenience and redundancy (without treating the mirror as the canonical source)
 
-## 3. Conclusion
+## Best Practices
 
-All three approaches above are broadly accepted and have many successful precedents in the onchain art community.
+All three approaches above are broadly accepted and have many successful precedents in the onchain art community. IPFS emphasizes integrity and replicability but requires ongoing operational discipline; Arweave emphasizes long-lived retrieval (often via gateway access); onchain storage minimizes external dependencies but trades into gas/cost constraints and client limitations. Marketplace support and conventions change over time, so re-validate periodically and document expected rendering behavior.
 
-- IPFS emphasizes integrity and replicability, but requires operational discipline (pinning/replication).
-- Arweave emphasizes long-lived retrieval with strong cultural adoption, typically via gateway access.
-- Onchain storage minimizes external dependencies, but trades into gas/cost constraints and potential client limitations.
+- Prefer content-addressed identifiers (IPFS CIDs) or immutable anchors (Arweave txids) over mutable URLs whenever possible.
+- Design for multiple resolution paths: keep a canonical decentralized URI (`ipfs://` or `ar://`), and optionally provide gateway/HTTPS mirrors for compatibility.
+- If metadata is intended to be mutable, consider emitting a standard update signal (for example: [EIP-4906](https://eips.ethereum.org/EIPS/eip-4906)).
+- If metadata is intended to be immutable, use immutable decentralized URIs (for example: IPFS CIDs or Arweave txids) and publish a clear “freeze” promise.
+- Assume clients cache metadata and media. If you need updates to be reflected, test refresh behavior on the platforms you care about.
+- If you use IPFS, pin redundantly (multiple independent providers and/or your own node) and keep an offline archive of the original files.
+- If you use Arweave, keep the original upload set and a durable manifest of txids, even if you believe the network is the archive.
+- If you store metadata/media onchain, document the decoding/rendering expectations and consider optional mirrors for convenience (without making the mirror canonical).
+- Write down your failure modes and recovery plan (domain loss, gateway outage, pinning provider shutdown, marketplace caching quirks), then operationalize it.
 
-Different teams will prefer different tradeoffs. This page should be treated as a living document: as standards evolve and marketplace support changes, these recommendations may also change.
+## References
+Standards are intentionally open-ended, so implementers should read the primary EIPs directly. These additional references are helpful for day-to-day practice and interoperability expectations.
 
-Strong projects define these constraints up front and document the expected rendering behavior over time.
+- Official standards: [EIP-721](https://eips.ethereum.org/EIPS/eip-721), [EIP-1155](https://eips.ethereum.org/EIPS/eip-1155), [EIP-4906](https://eips.ethereum.org/EIPS/eip-4906)
+- Ethereum Foundation overviews: [ethereum.org ERC-721](https://ethereum.org/developers/docs/standards/tokens/erc-721), [ethereum.org ERC-1155](https://ethereum.org/developers/docs/standards/tokens/erc-1155)
+- OpenZeppelin overviews: [ERC-721](https://docs.openzeppelin.com/contracts/5.x/erc721) & [ERC-1155](https://docs.openzeppelin.com/contracts/5.x/erc1155)
+- OpenSea “Metadata Standards” (practical, widely referenced): [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
+- IPFS concepts: [Content addressing](https://docs.ipfs.tech/concepts/content-addressing/), [Gateways](https://docs.ipfs.tech/concepts/ipfs-gateway/)
+- IPFS pinning: [IPFS Pinning Quickstart](https://docs.ipfs.tech/quickstart/pin/)
+- Arweave docs: [Arweave Docs](https://docs.arweave.org/)
+- Arweave `ar://` resolution: [Arweave Wayfinder](https://docs.arweave.net/learn/wayfinder)
+- `data:` URL scheme: [RFC 2397](https://www.rfc-editor.org/rfc/rfc2397)
