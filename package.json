@@ -1,4 +1,21 @@
 {
   "name": "onchain-art-wiki",
-  "packageManager": "yarn@4.11.0"
+  "packageManager": "yarn@4.12.0",
+  "type": "module",
+  "scripts": {
+    "dev": "yarn eleventy --serve",
+    "build:site": "NODE_ENV=production yarn eleventy",
+    "build:css": "NODE_ENV=production node scripts/build-css.mjs",
+    "build:search": "pagefind --site _site",
+    "build": "yarn build:site && yarn build:search"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.2",
+    "@tailwindcss/postcss": "^4.1.18",
+    "cssnano": "^7.1.2",
+    "pagefind": "^1.4.0",
+    "postcss": "^8.5.6",
+    "prettier": "3.8.1",
+    "tailwindcss": "^4.1.18"
+  }
 }

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% if title %}{{ title }} | {% endif %}Onchain Art Wiki</title>
+  {% if summary %}
+  <meta name="description" content="{{ summary }}" />
+  {% endif %}
+  <link rel="icon" href="/assets/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+  <link rel="icon" href="/assets/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
+  <link rel="stylesheet" href="/assets/css/main.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Jersey+10&display=swap"
+    rel="stylesheet" />
+</head>
+
+<body class="font-body flex min-h-screen flex-col" {% if pagefind_ignore %} data-pagefind-ignore="all" {% endif %}>
+  <header class="border-b border-zinc-200 bg-white/80 backdrop-blur">
+    <div class="mx-auto flex w-full items-center justify-between px-4 py-4 md:px-8">
+      <a class="font-title text-4xl leading-none text-zinc-900 no-underline" href="/">Onchain Art Wiki</a>
+      <nav class="text-sm font-medium text-zinc-600">
+        <a class="no-underline hover:underline" href="/search/">Search</a>
+      </nav>
+    </div>
+  </header>
+  <main class="mx-auto w-full max-w-225 flex-1 px-4 py-10 md:px-8">{{ content | safe }}</main>
+  <footer class="border-t border-zinc-200 bg-white">
+    <div class="mx-auto flex flex-col md:flex-row w-full items-center md:justify-between gap-4 px-4 py-6 md:px-8">
+      <p class="m-0 text-sm text-zinc-600 text-center md:text-start">Made for the community, by the community. No Rights
+        Reserved.</p>
+      <a class="text-xl font-title no-underline hover:underline" href="https://github.com/mpeyfuss/onchain-art-wiki"
+        target="_blank" rel="noreferrer">Contribute</a>
+    </div>
+  </footer>
+</body>
+
+</html>

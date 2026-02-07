@@ -1,0 +1,40 @@
+<div class="flex flex-col gap-4">
+  {% for opinion in opinions %}
+  {% set opinionAuthor = opinion.author | resolveAuthor %}
+  <article class="group relative cursor-pointer rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+    <a class="absolute inset-0 z-10 rounded-xl no-underline" href="{{ opinion.url }}" target="_blank" rel="noreferrer"
+      aria-label="{{ opinion.title }}"></a>
+    <h4 class="relative z-20 mt-0 pointer-events-none">
+      <span class="line-clamp-2 group-hover:underline">
+        {{ opinion.title }}
+      </span>
+    </h4>
+    <p class="relative z-20 mt-2 flex items-center gap-2 text-sm text-zinc-600 pointer-events-none">
+      {% if opinionAuthor and opinionAuthor.url %}
+      <a class="pointer-events-auto relative z-30 inline-flex items-center gap-2 no-underline hover:underline"
+        href="{{ opinionAuthor.url }}" target="_blank" rel="noreferrer" aria-label="{{ opinionAuthor.name }}">
+        {% if opinionAuthor.pfp %}
+        <img src="{{ opinionAuthor.pfp }}" alt="{{ opinionAuthor.name }}" class="size-6 rounded-full object-cover"
+          loading="lazy" />
+        {% endif %}
+        <span>{{ opinionAuthor.name }}</span>
+      </a>
+      {% elif opinionAuthor %}
+      {% if opinionAuthor.pfp %}
+      <img src="{{ opinionAuthor.pfp }}" alt="{{ opinionAuthor.name }}" class="size-6 rounded-full object-cover"
+        loading="lazy" />
+      {% endif %}
+      <span>{{ opinionAuthor.name }}</span>
+      {% else %}
+      <span>{{ opinion.author }}</span>
+      {% endif %}
+      {% if opinion.date %}
+      · {{ opinion.date | formatDateOnly }}
+      {% endif %}
+    </p>
+    {% if opinion.note %}
+    <p class="line-clamp-3 pointer-events-none relative z-20 mt-3 text-sm text-zinc-700">{{ opinion.note }}</p>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>

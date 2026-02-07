@@ -1,0 +1,32 @@
+---
+layout: layouts/base.njk
+---
+{% set resolvedAuthors = authors | resolveAuthors %}
+<article class="max-w-none">
+  <h1>{{ title }}</h1>
+
+  {% if resolvedAuthors.length %}
+  <div class="flex flex-wrap items-center gap-4">
+    {% for author in resolvedAuthors %}
+    <a class="inline-flex items-center gap-2 text-sm text-zinc-700 no-underline hover:underline" href="{{ author.url }}"
+      target="_blank" rel="noreferrer">
+      <img src="{{ author.pfp }}" alt="{{ author.name }}"
+        class="size-10 rounded-full border border-zinc-200 object-cover" loading="lazy" />
+      <span class="font-medium text-zinc-800">{{ author.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if summary %}
+  <p class="italic mt-5">{{ summary }}</p>
+  {% endif %}
+  <hr class="text-zinc-300 w-full my-10" />
+  {{ content | safe }}
+</article>
+
+{% if opinions and opinions.length %}
+<section class="mt-12 space-y-4">
+  <h2>Opinions from the Community</h2>
+  {% include "opinion-cards.njk" %}
+</section>
+{% endif %}
