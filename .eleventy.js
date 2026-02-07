@@ -6,8 +6,7 @@ export default function (eleventyConfig) {
   const supportedChains = new Set(["bitcoin", "ethereum", "solana"]);
 
   eleventyConfig.addWatchTarget("src/assets/css/main.css");
-  eleventyConfig.addPassthroughCopy({ "src/assets/authors": "assets/authors" });
-  eleventyConfig.addPassthroughCopy({ "src/assets/favicon.svg": "assets/favicon.svg" });
+  eleventyConfig.addPassthroughCopy({ "src/assets/fonts": "assets/fonts" });
   eleventyConfig.addPassthroughCopy({ "src/assets/favicon-light.svg": "assets/favicon-light.svg" });
   eleventyConfig.addPassthroughCopy({ "src/assets/favicon-dark.svg": "assets/favicon-dark.svg" });
   eleventyConfig.on("eleventy.before", async () => {

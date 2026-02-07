@@ -2,6 +2,22 @@
 
 @source "../../**/*.{md,njk,html}";
 
+@font-face {
+  font-family: "Inter";
+  src: url("/assets/fonts/Inter.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Jersey 10";
+  src: url("/assets/fonts/Jersey10.ttf") format("truetype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 @theme {
   --font-title: "Jersey 10", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
