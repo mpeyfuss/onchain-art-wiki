@@ -1,25 +1,13 @@
 ---
 layout: layouts/base.njk
 ---
-{% set resolvedAuthors = authors | resolveAuthors %}
+{% set resolvedContributors = contributors | resolveContributors %}
 {% set articleContent = content | addHeadingIds %}
 {% set tocHeadings = articleContent | extractTocHeadings %}
 {% set lastModified = page.inputPath | fileLastModified %}
 <article class="max-w-none">
   <h1>{{ title }}</h1>
 
-  {% if resolvedAuthors.length %}
-  <div class="flex flex-wrap items-center gap-4">
-    {% for author in resolvedAuthors %}
-    <a class="inline-flex items-center gap-2 text-sm text-zinc-700 no-underline hover:underline" href="{{ author.url }}"
-      target="_blank" rel="noreferrer">
-      <img src="{{ author.pfp }}" alt="{{ author.name }}"
-        class="size-10 rounded-full border border-zinc-200 object-cover" loading="lazy" />
-      <span class="font-medium text-zinc-800">{{ author.name }}</span>
-    </a>
-    {% endfor %}
-  </div>
-  {% endif %}
   {% if lastModified %}
   <p class="text-sm text-zinc-600 mt-3 mb-0">Last updated: {{ lastModified | formatDateOnly }}</p>
   {% endif %}
@@ -28,13 +16,18 @@ layout: layouts/base.njk
   {% endif %}
   {% if tocHeadings.length %}
   <nav class="mt-6 rounded-lg border border-zinc-200 bg-zinc-100/50 p-4" aria-label="On this page">
-    <h2 class="text-lg mt-0 mb-2 font-body font-semibold">On this page</h2>
+    <h2 class="text-lg mt-0 mb-2 font-body font-semibold">Contents</h2>
     <ul class="my-0 list-none pl-0">
       {% for heading in tocHeadings %}
       <li class="{% if heading.level == 3 %}ml-4{% endif %} mt-1">
         <a class="text-sm text-zinc-700 no-underline hover:underline" href="#{{ heading.id }}">{{ heading.text }}</a>
       </li>
       {% endfor %}
+      {% if resolvedContributors.length %}
+      <li class="mt-1">
+        <a class="text-sm text-zinc-700 no-underline hover:underline" href="#contributors">Contributors</a>
+      </li>
+      {% endif %}
       {% if opinions and opinions.length %}
       <li class="mt-1">
         <a class="text-sm text-zinc-700 no-underline hover:underline" href="#opinions-from-the-community">Opinions from
@@ -47,6 +40,22 @@ layout: layouts/base.njk
   <hr class="text-zinc-300 w-full my-10" />
   {{ articleContent | safe }}
 </article>
+
+{% if resolvedContributors.length %}
+<section id="contributors" class="mt-12 space-y-4">
+  <h2>Contributors</h2>
+  <div class="flex flex-wrap items-center gap-4">
+    {% for contributor in resolvedContributors %}
+    <a class="inline-flex items-center gap-2 text-sm text-zinc-700 no-underline hover:underline"
+      href="{{ contributor.url }}" target="_blank" rel="noreferrer">
+      <img src="{{ contributor.pfp }}" alt="{{ contributor.name }}"
+        class="size-8 rounded-full border border-zinc-200 object-cover" loading="lazy" />
+      <span class="font-medium text-zinc-800">{{ contributor.name }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 
 {% if opinions and opinions.length %}
 <section id="opinions-from-the-community" class="mt-12 space-y-4">

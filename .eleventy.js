@@ -1,10 +1,10 @@
 import { buildCss } from "./scripts/build-css.mjs";
-import authors from "./src/_data/authors.json" with { type: "json" };
+import contributors from "./src/_data/contributors.json" with { type: "json" };
 import { statSync } from "node:fs";
 import path from "node:path";
 
 export default function (eleventyConfig) {
-  const authorsById = new Map(authors.map((author) => [author.id, author]));
+  const contributorsById = new Map(contributors.map((contributor) => [contributor.id, contributor]));
   const supportedChains = new Set(["bitcoin", "ethereum", "solana"]);
   const slugify = (value = "") => {
     return String(value)
@@ -34,17 +34,17 @@ export default function (eleventyConfig) {
   eleventyConfig.on("eleventy.before", async () => {
     await buildCss({ production: process.env.NODE_ENV === "production" });
   });
-  eleventyConfig.addFilter("resolveAuthors", (authorIds = []) => {
-    return authorIds
-      .map((authorId) => authorsById.get(authorId))
-      .filter((author) => Boolean(author));
+  eleventyConfig.addFilter("resolveContributors", (contributorIds = []) => {
+    return contributorIds
+      .map((contributorId) => contributorsById.get(contributorId))
+      .filter((contributor) => Boolean(contributor));
   });
-  eleventyConfig.addFilter("resolveAuthor", (authorId) => {
-    if (!authorId) {
+  eleventyConfig.addFilter("resolveContributor", (contributorId) => {
+    if (!contributorId) {
       return null;
     }
 
-    return authorsById.get(authorId) || null;
+    return contributorsById.get(contributorId) || null;
   });
   eleventyConfig.addFilter("formatDateOnly", (value) => {
     if (!value) {

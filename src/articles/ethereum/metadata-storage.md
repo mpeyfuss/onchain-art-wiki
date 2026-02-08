@@ -3,9 +3,14 @@ layout: layouts/article.njk
 title: "Accepted Metadata Storage Practices on Ethereum"
 tags: ["ethereum", "metadata", "storage"]
 summary: "A practical guide to generally accepted NFT metadata storage approaches for digital art on Ethereum."
-authors: ["mpeyfuss"]
+contributors: ["mpeyfuss"]
 date: 2026-02-06
 opinions:
+  - title: "Simple best practices for digital art creators and platforms"
+    url: "https://x.com/edouard/status/2019935230304432546"
+    author: "edouard"
+    date: 2026-02-07
+    note: "A concise summary of experience-based best practices for digital art preservation + thoughts on Arweave vs IPFS."
   - title: "Digital Art Foundations: Building a Legacy Beyond the Marketplace"
     url: "https://x.com/G4SP4RD/status/2019407912762839327"
     author: "G4SP4RD"

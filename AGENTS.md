@@ -62,7 +62,7 @@ Example:
 title: "Onchain Auctions"
 tags: ["mechanisms", "market-structure"]
 summary: "How auction mechanisms function in onchain art contexts."
-authors: ["jane-doe"]
+contributors: ["jane-doe"]
 opinions:
   - title: "The Case for Onchain Auctions"
     url: "https://example.com/article"
@@ -71,4 +71,3 @@ opinions:
     note: "Clear framing of auction mechanics."
 ---
 ```
-

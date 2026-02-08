@@ -16,7 +16,7 @@ This wiki is built to reduce tribalism, not erase differences.
 Contributions are welcome and expected.
 
 1. Add or edit articles in `src/articles/**/*.md`.
-2. Use YAML front matter for metadata (`title`, `tags`, `summary`, `authors`).
+2. Use YAML front matter for metadata (`title`, `tags`, `summary`, `contributors`).
 3. Keep writing factual, source-aware, and accessible to readers outside your immediate community.
 4. If you include opinion links, use `opinions` frontmatter entries to represent substantive perspectives.
 5. Run `yarn build` before opening a PR to confirm the site and search index still build cleanly.
