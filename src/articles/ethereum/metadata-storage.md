@@ -4,7 +4,6 @@ title: "Accepted Metadata Storage Practices on Ethereum"
 tags: ["ethereum", "metadata", "storage"]
 summary: "A practical guide to generally accepted NFT metadata storage approaches for digital art on Ethereum."
 contributors: ["mpeyfuss"]
-date: 2026-02-06
 opinions:
   - title: "Simple best practices for digital art creators and platforms"
     url: "https://x.com/edouard/status/2019935230304432546"
