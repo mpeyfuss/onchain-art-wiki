@@ -7,7 +7,7 @@ It is intended for humans and automated agents contributing to the **Onchain Art
 
 ## Project Overview
 
-**Onchain Art Wiki** is a static, markdown-first reference for crypto-native and onchain art practices, mechanisms, and cultural context.
+**Onchain Art Wiki** is a static, markdown-first reference for crypto-native and onchain art practices, mechanisms, and technical details.
 
 - All core content lives as Markdown files
 - The site is built with Eleventy (11ty)

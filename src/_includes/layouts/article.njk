@@ -18,20 +18,50 @@ layout: layouts/base.njk
   <nav class="mt-6 rounded-lg border border-zinc-200 bg-zinc-100/50 p-4" aria-label="On this page">
     <h2 class="text-lg mt-0 mb-2 font-body font-semibold">Contents</h2>
     <ul class="my-0 list-none pl-0">
+      {% set sectionIndex = 0 %}
+      {% set subSectionIndex = 0 %}
       {% for heading in tocHeadings %}
+      {% if heading.level == 2 %}
+      {% set sectionIndex = sectionIndex + 1 %}
+      {% set subSectionIndex = 0 %}
+      {% elif heading.level == 3 %}
+      {% if sectionIndex == 0 %}
+      {% set sectionIndex = 1 %}
+      {% endif %}
+      {% set subSectionIndex = subSectionIndex + 1 %}
+      {% endif %}
       <li class="{% if heading.level == 3 %}ml-4{% endif %} mt-1">
-        <a class="text-sm text-zinc-700 no-underline hover:underline" href="#{{ heading.id }}">{{ heading.text }}</a>
+        <a class="inline-flex items-baseline gap-2 text-sm text-zinc-700 no-underline hover:underline"
+          href="#{{ heading.id }}">
+          <span class="text-xs tabular-nums text-zinc-500">
+            {% if heading.level == 3 %}
+            {{ sectionIndex }}.{{ subSectionIndex }}.
+            {% else %}
+            {{ sectionIndex }}.
+            {% endif %}
+          </span>
+          <span>{{ heading.text }}</span>
+        </a>
       </li>
       {% endfor %}
       {% if resolvedContributors.length %}
+      {% set sectionIndex = sectionIndex + 1 %}
       <li class="mt-1">
-        <a class="text-sm text-zinc-700 no-underline hover:underline" href="#contributors">Contributors</a>
+        <a class="inline-flex items-baseline gap-2 text-sm text-zinc-700 no-underline hover:underline"
+          href="#contributors">
+          <span class="text-xs tabular-nums text-zinc-500">{{ sectionIndex }}.</span>
+          <span>Contributors</span>
+        </a>
       </li>
       {% endif %}
       {% if opinions and opinions.length %}
+      {% set sectionIndex = sectionIndex + 1 %}
       <li class="mt-1">
-        <a class="text-sm text-zinc-700 no-underline hover:underline" href="#opinions-from-the-community">Opinions from
-          the Community</a>
+        <a class="inline-flex items-baseline gap-2 text-sm text-zinc-700 no-underline hover:underline"
+          href="#opinions-from-the-community">
+          <span class="text-xs tabular-nums text-zinc-500">{{ sectionIndex }}.</span>
+          <span>Opinions from the Community</span>
+        </a>
       </li>
       {% endif %}
     </ul>

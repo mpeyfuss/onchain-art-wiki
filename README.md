@@ -1,6 +1,6 @@
 # Onchain Art Wiki
 
-A static, markdown-first reference for crypto-native and onchain art practices, mechanisms, and cultural context.
+A static, markdown-first reference for crypto-native and onchain art practices, mechanisms, and technical details.
 
 ## Editorial Approach
 

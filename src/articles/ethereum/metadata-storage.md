@@ -5,6 +5,11 @@ tags: ["ethereum", "metadata", "storage"]
 summary: "A practical guide to generally accepted NFT metadata storage approaches for digital art on Ethereum."
 contributors: ["mpeyfuss"]
 opinions:
+  - title: "On Choosing IPFS for Digital Art"
+    url: "https://medium.com/@mpeyfuss/on-choosing-ipfs-for-digital-art-e62e0dadca9a"
+    author: "mpeyfuss"
+    date: 2026-02-10
+    note: "Thoughts about IPFSf based on experiences building long-lived, decentralized systems."
   - title: "Simple best practices for digital art creators and platforms"
     url: "https://x.com/edouard/status/2019935230304432546"
     author: "edouard"
@@ -30,10 +35,11 @@ This page focuses on NFT metadata: the JSON (and referenced media) that wallets 
 
 ## TL;DR
 
-- IPFS, Arweave, and onchain storage can all be “good” solutions. The difference is tradeoffs and operational discipline.
-- Prefer canonical, decentralized URIs (`ipfs://`, `ar://`) over centralized `https://` links whenever possible.
-- If you use IPFS or Arweave, keep backups and manifests (pin/replicate where relevant) so you can recover from tool/provider/gateway failures.
-- Have a “what if” plan (domain loss, gateway outage, pinning provider shutdown, marketplace caching quirks) before you mint.
+- IPFS, Arweave, and onchain storage can all be “good” solutions; they differ mainly in who owns the failure mode and what upkeep is required.
+- **IPFS:** strongest integrity anchors (CIDs) and easy to replicate, but durability is not automatic; if nobody pins/replicates, the CID stops resolving.
+- **Arweave:** designed for long-lived retrieval with immutable txids, but it relies on long-term network viability (token economics, rising storage/bandwidth demands, infrastructure costs) and tends to fail at the system level in gradual, harder-to-spot ways.
+- **Onchain:** minimizes external dependencies and has the highest durability of all three methods, but the main barrier is cost (plus user error and future client/standards expectations).
+- Regardless of method, plan for change: gateway outages, pinning provider shutdowns, marketplace caching quirks, and recovery paths before you mint.
 
 ## Background
 
@@ -136,6 +142,12 @@ When used well, IPFS gives you:
 - flexibility to mirror content via many gateways
 - the ability to restore availability by re-pinning the same bytes under the same CID (you can't change the content without changing the CID)
 
+#### Risks
+
+- **Durability is not guaranteed unless someone pins.** If nobody pins or replicates the content, it can disappear from the network even though the CID is “correct”.
+- **Failure is file-level and loud.** When the content isn’t available, the CID simply doesn’t resolve (often surfacing as broken media/metadata rather than a subtle degradation).
+- **Availability requires ongoing upkeep.** Pinning providers can churn, gateways can rate-limit, and operational discipline (redundant pinning + backups) matters over time.
+
 #### Marketplace integration and caveats
 
 - Many platforms understand `ipfs://` directly, but real-world behavior varies (some clients still rely on HTTP gateways and/or aggressive caching).
@@ -154,7 +166,6 @@ More IPFS background:
 - Prefer `ipfs://` as the **canonical** URI, and treat gateway URLs as mirrors for compatibility.
 - Keep a deterministic build output (a reproducible folder structure) so you can re-pin and re-serve the exact same bytes later.
 - Test your CIDs through at least two independent gateways and one local node (to catch DNS, redirect, and header quirks).
-- Decide whether your metadata is immutable or mutable and who has control of updating that.
 
 #### How to back it up
 
@@ -184,20 +195,21 @@ You’ll often see:
 
 #### Why it’s acceptable
 
-Arweave is widely used for NFT metadata and media because it’s designed around long-lived retrieval and replication, and it has strong cultural adoption in crypto-native art communities. The pay-once-store-for-a-long-time narrative is one that many people in the space value.
+Arweave is widely used for NFT metadata and media because it’s designed around long-lived retrieval and replication, and it has strong cultural adoption in crypto-native art communities. The pay-once-store-forever narrative is one that many people in the space value.
+
+#### Risks
+
+- **Network viability is an assumption.** The “pay once, store forever” model depends on token economics and future storage-cost assumptions continuing to make it attractive for nodes to keep serving data.
+- **Infrastructure requirements can centralize operators.** Running “full” infrastructure can require substantial storage/bandwidth over time as the dataset grows, which can push participation toward well-capitalized operators and increase reliance on a smaller set of gateways.
+- **Failure is system-level and gradual.** If the network becomes less viable, it may show up as increasing friction (worse gateway reliability, slower retrieval, ecosystem/tooling churn) long before it becomes an obvious outage.
+- **Preserving txids/manifests is still on you.** Even if the network persists, losing the txid/manifest mapping can break retrieval in practice (especially across tools and platforms).
 
 #### Marketplace integration and caveats
 
-- Many marketplaces reliably handle `https://arweave.net/<txid>` links.
+- Most, if not all, marketplaces reliably handle `https://arweave.net/<txid>` links.
 - Support for `ar://` varies. Some environments require a gateway/extension or additional resolution tooling.
 
 OpenSea references `ar://<hash>` as the Arweave equivalent of `ipfs://`: [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
-
-AR.IO Wayfinder (background on `ar://` resolution): [Arweave Wayfinder](https://docs.arweave.net/learn/wayfinder)
-
-More Arweave background:
-
-- Arweave docs: [Arweave Docs](https://docs.arweave.org/)
 
 #### A developer’s checklist
 
@@ -232,21 +244,27 @@ The JSON can then reference media either:
 OpenSea documents this pattern explicitly: [OpenSea Metadata Standards](https://docs.opensea.io/docs/metadata-standards)
 The `data:` URL scheme is defined here: [RFC 2397](https://www.rfc-editor.org/rfc/rfc2397)
 
-#### A developer’s checklist
-
-- Validate the largest `tokenURI` payloads you expect against the clients you care about (some have size limits, timeouts, or strict parsers).
-- If you use Base64 `data:` URIs, ensure the JSON decodes cleanly and uses predictable UTF-8 (avoid exotic encodings).
-- If you are “onchain generative”, document what’s onchain versus what’s assumed offchain (renderers, scripts, fonts, libraries).
-
 #### Why it’s acceptable
 
 Onchain metadata is acceptable because it minimizes external dependencies: if Ethereum state is available, the metadata is available. This is especially attractive for art that aims to be durable and self-contained.
+
+#### Risks
+
+- **Cost is the main barrier.** Full onchain metadata and media can be prohibitively expensive on Ethereum, pushing most projects toward smaller payloads or hybrid designs.
+- **User error and standards drift.** The biggest real risks are mistakes in encoding/decoding (invalid Base64, invalid JSON, wrong MIME types) and future client or ecosystem expectations that fail to resolve or correctly interpret the URI.
+- **Lowest dependency risk, not zero risk.** Ethereum state is highly durable, but long-term readability still depends on clients and conventions for interpreting what’s stored.
 
 #### Marketplace integration and caveats
 
 - Not all marketplaces handle every kind of `data:` payload equally. Size limits, media types, and rendering differences exist and are important considerations made by marketplaces.
 - Gas constraints and storage costs are real, and can push projects into hybrid designs. Most content cannot be stored on Ethereum without incurring extreme costs.
 - If you rely on external rendering (e.g., offchain JS/HTML), you reintroduce offchain dependencies even if the JSON is onchain.
+
+#### A developer’s checklist
+
+- Validate the largest `tokenURI` payloads you expect against the clients you care about (some have size limits, timeouts, or strict parsers).
+- If you use Base64 `data:` URIs, ensure the JSON decodes cleanly and uses predictable UTF-8 (avoid exotic encodings).
+- If you are “onchain generative”, document what’s onchain versus what’s assumed offchain (renderers, scripts, fonts, libraries).
 
 #### How to back it up
 

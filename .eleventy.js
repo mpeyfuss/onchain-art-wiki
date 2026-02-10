@@ -1,10 +1,12 @@
 import { buildCss } from "./scripts/build-css.mjs";
-import contributors from "./src/_data/contributors.json" with { type: "json" };
+import people from "./src/_data/people.json" with { type: "json" };
 import { statSync } from "node:fs";
 import path from "node:path";
 
 export default function (eleventyConfig) {
-  const contributorsById = new Map(contributors.map((contributor) => [contributor.id, contributor]));
+  const peopleById = new Map(
+    people.map((person) => [person.id, person])
+  );
   const supportedChains = new Set(["bitcoin", "ethereum", "solana"]);
   const slugify = (value = "") => {
     return String(value)
@@ -22,7 +24,7 @@ export default function (eleventyConfig) {
       .replace(/&amp;/g, "&")
       .replace(/&lt;/g, "<")
       .replace(/&gt;/g, ">")
-      .replace(/&quot;/g, "\"")
+      .replace(/&quot;/g, '"')
       .replace(/&#39;/g, "'");
   };
 
@@ -36,7 +38,7 @@ export default function (eleventyConfig) {
   });
   eleventyConfig.addFilter("resolveContributors", (contributorIds = []) => {
     return contributorIds
-      .map((contributorId) => contributorsById.get(contributorId))
+      .map((contributorId) => peopleById.get(contributorId))
       .filter((contributor) => Boolean(contributor));
   });
   eleventyConfig.addFilter("resolveContributor", (contributorId) => {
@@ -44,7 +46,7 @@ export default function (eleventyConfig) {
       return null;
     }
 
-    return contributorsById.get(contributorId) || null;
+    return peopleById.get(contributorId) || null;
   });
   eleventyConfig.addFilter("formatDateOnly", (value) => {
     if (!value) {
@@ -69,7 +71,9 @@ export default function (eleventyConfig) {
     }
 
     try {
-      const absolutePath = path.isAbsolute(inputPath) ? inputPath : path.resolve(process.cwd(), inputPath);
+      const absolutePath = path.isAbsolute(inputPath)
+        ? inputPath
+        : path.resolve(process.cwd(), inputPath);
       return statSync(absolutePath).mtime;
     } catch {
       return "";
@@ -77,36 +81,39 @@ export default function (eleventyConfig) {
   });
   eleventyConfig.addFilter("addHeadingIds", (html = "") => {
     const usedIds = new Set();
-    return String(html).replace(/<h([23])([^>]*)>([\s\S]*?)<\/h\1>/gi, (match, level, attrs = "", inner = "") => {
-      const existingIdMatch = attrs.match(/\sid=(["'])(.*?)\1/i);
-      let headingId = existingIdMatch ? existingIdMatch[2] : "";
+    return String(html).replace(
+      /<h([23])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+      (match, level, attrs = "", inner = "") => {
+        const existingIdMatch = attrs.match(/\sid=(["'])(.*?)\1/i);
+        let headingId = existingIdMatch ? existingIdMatch[2] : "";
 
-      if (!headingId) {
-        const base = slugify(stripTags(inner)) || `section-${level}`;
-        headingId = base;
-        let duplicateCount = 2;
-        while (usedIds.has(headingId)) {
-          headingId = `${base}-${duplicateCount}`;
-          duplicateCount += 1;
+        if (!headingId) {
+          const base = slugify(stripTags(inner)) || `section-${level}`;
+          headingId = base;
+          let duplicateCount = 2;
+          while (usedIds.has(headingId)) {
+            headingId = `${base}-${duplicateCount}`;
+            duplicateCount += 1;
+          }
+          usedIds.add(headingId);
+          return `<h${level}${attrs} id="${headingId}">${inner}</h${level}>`;
         }
+
+        if (usedIds.has(headingId)) {
+          const base = headingId;
+          let duplicateCount = 2;
+          while (usedIds.has(`${base}-${duplicateCount}`)) {
+            duplicateCount += 1;
+          }
+          const dedupedId = `${base}-${duplicateCount}`;
+          usedIds.add(dedupedId);
+          return `<h${level}${attrs.replace(/\sid=(["'])(.*?)\1/i, ` id="${dedupedId}"`)}>${inner}</h${level}>`;
+        }
+
         usedIds.add(headingId);
-        return `<h${level}${attrs} id="${headingId}">${inner}</h${level}>`;
+        return match;
       }
-
-      if (usedIds.has(headingId)) {
-        const base = headingId;
-        let duplicateCount = 2;
-        while (usedIds.has(`${base}-${duplicateCount}`)) {
-          duplicateCount += 1;
-        }
-        const dedupedId = `${base}-${duplicateCount}`;
-        usedIds.add(dedupedId);
-        return `<h${level}${attrs.replace(/\sid=(["'])(.*?)\1/i, ` id="${dedupedId}"`)}>${inner}</h${level}>`;
-      }
-
-      usedIds.add(headingId);
-      return match;
-    });
+    );
   });
   eleventyConfig.addFilter("extractTocHeadings", (html = "") => {
     const headings = [];
